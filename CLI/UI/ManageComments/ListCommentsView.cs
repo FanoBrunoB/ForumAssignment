@@ -1,14 +1,18 @@
 using RepositoryContracts;
+using Entities;
 
 namespace CLI.UI.ManageComments;
 
 public class ListCommentsView(ICommentRepository commentRepository)
 {
-    private readonly ICommentRepository commentRepository = commentRepository;
-
-    public Task ListAllComments()
+    public void Run()
     {
-        commentRepository.GetMany();
-        return Task.CompletedTask;
+        IQueryable<Comment> comments = commentRepository.GetMany();
+
+        Console.WriteLine("=== All Comments ===");
+        foreach (Comment comment in comments)
+        {
+            Console.WriteLine($"[{comment.Id}] {comment.Body}");
+        }
     }
 }

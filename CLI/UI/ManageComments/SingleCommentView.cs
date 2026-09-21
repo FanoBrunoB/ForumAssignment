@@ -5,9 +5,9 @@ namespace CLI.UI.ManageComments;
 
 public class SingleCommentView(ICommentRepository commentRepository)
 {
-    public async Task SingleAsync(Comment comment)
+    public async Task RunAsync(int id)
     {
-        await commentRepository.GetSingleAsync(comment.Id);
+        Comment comment = await commentRepository.GetSingleAsync(id);
         Console.WriteLine($"Comment id: {comment.Id}");
         Console.WriteLine($"Body: {comment.Body}");
     }
