@@ -66,6 +66,7 @@ public class CliApp(
             Console.WriteLine("=== Manage Users ===");
             Console.WriteLine("1. Create new user");
             Console.WriteLine("2. See all users");
+            Console.WriteLine("3. List specific user");
             Console.WriteLine("0. Back");
             Console.Write("Choose an option: ");
             string? choice = Console.ReadLine();
@@ -77,6 +78,18 @@ public class CliApp(
                     break;
                 case "2":
                     new ListUsersView(userRepository).GetAllUsers();
+                    break;
+                case "3":
+                    Console.Write("User id: ");
+                    string? id = Console.ReadLine();
+                    try
+                    {
+                        await new SingleUserView(userRepository).GetAsync(int.Parse(id));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                     break;
                 case "0":
                     back = true;
@@ -106,7 +119,7 @@ public class CliApp(
             switch (choice)
             {
                 case "1":
-                    await new CreatePostView(postRepository).CreatePost();
+                    await new CreatePostView(postRepository, userRepository).CreatePost();
                     break;
                 case "2":
                     new ListPostsView(postRepository).GetMany();
@@ -153,7 +166,7 @@ public class CliApp(
             switch (choice)
             {
                 case "1":
-                    await new CreateCommentView(commentRepository).CreateAsync();
+                    await new CreateCommentView(commentRepository, userRepository, postRepository).CreateAsync();
                     break;
                 case "2":
                     new ListCommentsView(commentRepository).Run();
