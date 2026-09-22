@@ -10,16 +10,13 @@ public class CreatePostView(IPostRepository postRepository)
         Console.Write("User id: ");
         int userId = int.Parse(Console.ReadLine()!);
 
-        Console.Write("Forum id: ");
-        int forumId = int.Parse(Console.ReadLine()!);
-
         Console.Write("Title: ");
         string title = Console.ReadLine()!;
 
         Console.Write("Body: ");
         string body = Console.ReadLine()!;
 
-        Post post = new Post(userId, forumId, title, body);
+        Post post = new Post(userId, title, body);
 
         Post createdPost = await postRepository.AddAsync(post);
 
