@@ -67,6 +67,7 @@ public class CliApp(
             Console.WriteLine("1. Create new user");
             Console.WriteLine("2. See all users");
             Console.WriteLine("3. List specific user");
+            Console.WriteLine("4. Delete user");
             Console.WriteLine("0. Back");
             Console.Write("Choose an option: ");
             string? choice = Console.ReadLine();
@@ -90,6 +91,21 @@ public class CliApp(
                     {
                         Console.WriteLine(e.Message);
                     }
+                    break;
+                case "4":
+                    Console.Write("User id: ");
+                    string? deleteId = Console.ReadLine();
+
+                    try
+                    {
+                        await userRepository.DeleteAsync(int.Parse(deleteId));
+                        Console.WriteLine("User deleted successfully.");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
+
                     break;
                 case "0":
                     back = true;
