@@ -1,0 +1,199 @@
+@baseUrl = http://localhost:5074
+
+
+########## USERS (Ids 1-4) ##########
+
+### User 1
+POST {{baseUrl}}/Users
+Content-Type: application/json
+
+{ "userName": "cornel", "password": "pass123" }
+
+### User 2
+POST {{baseUrl}}/Users
+Content-Type: application/json
+
+{ "userName": "anna", "password": "anna2026" }
+
+### User 3
+POST {{baseUrl}}/Users
+Content-Type: application/json
+
+{ "userName": "mikkel", "password": "hygge99" }
+
+### User 4
+POST {{baseUrl}}/Users
+Content-Type: application/json
+
+{ "userName": "sofia", "password": "s0fia!" }
+
+########## FORUMS (Ids 1-3) ##########
+
+### Forum 1
+POST {{baseUrl}}/Forums
+Content-Type: application/json
+
+{ "userId": 1, "title": "General" }
+
+### Forum 2
+POST {{baseUrl}}/Forums
+Content-Type: application/json
+
+{ "userId": 2, "title": "C# and .NET" }
+
+### Forum 3
+POST {{baseUrl}}/Forums
+Content-Type: application/json
+
+{ "userId": 3, "title": "Cycling" }
+
+########## POSTS (Ids 1-5) ##########
+
+### Post 1 (General, by cornel)
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 1, "forumId": 1, "title": "Welcome!", "body": "Introduce yourself here." }
+
+### Post 2 (General, by sofia)
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 4, "forumId": 1, "title": "Hi everyone", "body": "New here, studying at VIA." }
+
+### Post 3 (C#, by anna)
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 2, "forumId": 2, "title": "DTO vs entity?", "body": "When should I use a DTO instead of the entity?" }
+
+### Post 4 (C#, by mikkel)
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 3, "forumId": 2, "title": "Rider tips", "body": "Invalidate caches fixes half my problems." }
+
+### Post 5 (Cycling, by cornel)
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 1, "forumId": 3, "title": "Best routes near Horsens", "body": "Looking for good road routes." }
+
+########## COMMENTS (Ids 1-6) ##########
+
+### Comment 1 on post 1
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 2, "postId": 1, "body": "Hi, I'm Anna!" }
+
+### Comment 2 on post 1
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 3, "postId": 1, "body": "Mikkel here, hello." }
+
+### Comment 3 on post 3
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 1, "postId": 3, "body": "Use a DTO for anything that goes over HTTP." }
+
+### Comment 4 on post 3
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 4, "postId": 3, "body": "And never send the password back!" }
+
+### Comment 5 on post 5
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 3, "postId": 5, "body": "Try the loop around Bygholm lake." }
+
+### Comment 6 on post 2
+POST {{baseUrl}}/Comments
+Content-Type: application/json
+
+{ "userId": 1, "postId": 2, "body": "Welcome Sofia!" }
+
+########## REACTIONS ##########
+
+### Anna likes post 1
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 2, "type": "Like", "postId": 1 }
+
+### Mikkel likes post 1
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 3, "type": "Like", "postId": 1 }
+
+### Cornel likes post 3
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 1, "type": "Like", "postId": 3 }
+
+### Anna dislikes post 4
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 2, "type": "Dislike", "postId": 4 }
+
+### Sofia likes comment 3
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 4, "type": "Like", "commentId": 3 }
+
+### Cornel likes comment 5
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 1, "type": "Like", "commentId": 5 }
+
+########## CHECK THE RESULTS ##########
+
+### All users
+GET {{baseUrl}}/Users
+
+### All forums
+GET {{baseUrl}}/Forums
+
+### Posts in the C# forum
+GET {{baseUrl}}/Posts?forumId=2
+
+### Comments on post 1
+GET {{baseUrl}}/Comments?postId=1
+
+### Reactions on post 1
+GET {{baseUrl}}/Reactions?postId=1
+
+########## THINGS THAT SHOULD FAIL ##########
+
+### Duplicate username -> 409
+POST {{baseUrl}}/Users
+Content-Type: application/json
+
+{ "userName": "anna", "password": "x" }
+
+### Post in a forum that doesn't exist -> 404
+POST {{baseUrl}}/Posts
+Content-Type: application/json
+
+{ "userId": 1, "forumId": 99, "title": "Nope", "body": "Should fail" }
+
+### Same user likes post 1 twice -> 409
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 2, "type": "Like", "postId": 1 }
+
+### Reaction with both postId and commentId -> 400
+POST {{baseUrl}}/Reactions
+Content-Type: application/json
+
+{ "userId": 1, "type": "Like", "postId": 1, "commentId": 1 }
