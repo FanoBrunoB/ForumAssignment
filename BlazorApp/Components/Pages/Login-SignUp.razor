@@ -1,0 +1,133 @@
+@page "/"
+@page "/login"
+@layout LoginLayout
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject IUserService UserService
+@inject UserSession Session
+@using BlazorApp.Services
+@using DTOs.User
+
+<PageTitle>Forum Assignment</PageTitle>
+
+<div class="login-card">
+    <h3>@modalText</h3>
+
+    <form @onsubmit="HandleSubmit">
+        <div class="field">
+            <label for="username">Username</label>
+            <input id="username" type="text" @bind="username" placeholder="Enter your username" required />
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" @bind="password" placeholder="Enter your password" required />
+        </div>
+        
+        @if (!isLogin)
+        {
+            <div class="field">
+                <label for="repeat-password">Repeat password</label>
+                <input id="repeat-password" type="password" @bind="repeatPassword" placeholder="Repeat your password" required="@(!isLogin)" />
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="error">@errorMessage</p>
+        }
+
+        <div class="submit-buttons">
+            <button type="submit">@modalText</button>
+            <a onclick="@HandleSwitchLogin">@newAccountMessage</a>
+        </div>
+    </form>
+</div>
+@if (showSuccessModal)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <h4>✅ Account created</h4>
+            <p>Your account has been created successfully. You can now log in.</p>
+            <button type="button" @onclick="CloseModal">OK</button>
+        </div>
+    </div>
+}
+
+@code {
+    private string username = "";
+    private string password = "";
+    private string repeatPassword = "";
+    private string modalText = "Sing in";
+    private string newAccountMessage = "New to Forum Assignment? Create an account here.";
+    private Boolean isLogin = true;
+    private Boolean showSuccessModal = false;
+    private string? errorMessage;
+    private UserDto[]? users;
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+
+        if (username == "" || password == "" || (!isLogin && repeatPassword == ""))
+        {
+            errorMessage = "Please fill in all fields";
+            return;
+        }
+
+        if (!isLogin && password != repeatPassword)
+        {
+            errorMessage = "Passwords do not match";
+            return;
+        }
+
+        try
+        {
+            if (isLogin)
+            {
+                users = await UserService.GetUsersAsync();
+                var user = users.FirstOrDefault(x => x.UserName == username && x.Password == password);
+                if (user == null)
+                {
+                    errorMessage = "Username or password is incorrect";
+                }
+                else
+                {
+                    Session.Login(user);
+                    Navigation.NavigateTo("/home");
+                }
+            }
+            else
+            {
+                await UserService.AddUserAsync(new CreateUserDto
+                {
+                    UserName = username,
+                    Password = password
+                });
+                
+                showSuccessModal = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void HandleSwitchLogin()
+    {
+        errorMessage = null;
+        username = "";
+        password = "";
+        repeatPassword = "";
+        newAccountMessage = isLogin ? "Already have an account? Log in here." : "New to Forum Assignment? Create an account here.";
+        modalText = isLogin ? "Sing up" : "Log in";
+        isLogin = !isLogin;
+    }
+    
+    private void CloseModal()
+    {
+        showSuccessModal = false;
+        HandleSwitchLogin();
+    }
+}

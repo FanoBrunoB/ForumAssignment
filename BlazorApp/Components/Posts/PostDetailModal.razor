@@ -1,0 +1,98 @@
+@using DTOs
+@inject UserSession Session
+@inject ICommentsService CommentsService
+
+<Modal Show="Post != null" Title="@(Post?.Title ?? "")" Size="large" OnClose="OnClose">
+    @if (Post != null)
+    {
+        <p class="post-author">by @GetUserName(Post.UserId)</p>
+        <p class="post-body">@Post.Body</p>
+
+        <hr />
+
+        <h5>Comments (@(comments?.Length ?? 0))</h5>
+
+        @if (comments == null)
+        {
+            <p class="muted">Loading comments...</p>
+        }
+        else if (comments.Length == 0)
+        {
+            <p class="muted">No comments yet. Be the first!</p>
+        }
+        else
+        {
+            <div class="comments">
+                @foreach (var c in comments)
+                {
+                    <div class="comment">
+                        <span class="comment-user">@GetUserName(c.UserId)</span>
+                        <p>@c.Body</p>
+                    </div>
+                }
+            </div>
+        }
+
+        <form class="comment-form" @onsubmit="AddComment">
+            <textarea @bind="newComment" rows="2" placeholder="Write a comment..." required></textarea>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <p class="error">@errorMessage</p>
+            }
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary-custom">Comment</button>
+            </div>
+        </form>
+    }
+</Modal>
+
+@code {
+    [Parameter] public PostDto? Post { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Func<int, string> GetUserName { get; set; } = _ => "Unknown";
+
+    private CommentDto[]? comments;
+    private string newComment = "";
+    private string? errorMessage;
+    private int? loadedPostId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        
+        if (Post != null && Post.Id != loadedPostId)
+        {
+            loadedPostId = Post.Id;
+            comments = null;
+            newComment = "";
+            errorMessage = null;
+            comments = await CommentsService.GetCommentsByPostAsync(Post.Id);
+        }
+        else if (Post == null)
+        {
+            loadedPostId = null;
+        }
+    }
+
+    private async Task AddComment()
+    {
+        errorMessage = null;
+        if (Session.CurrentUser == null || Post == null) return;
+
+        try
+        {
+            await CommentsService.AddCommentAsync(new CreateCommentDto
+            {
+                PostId = Post.Id,
+                UserId = Session.CurrentUser.Id,
+                Body = newComment
+            });
+        
+            newComment = "";
+            comments = await CommentsService.GetCommentsByPostAsync(Post.Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

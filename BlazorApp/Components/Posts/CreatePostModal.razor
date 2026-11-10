@@ -1,0 +1,80 @@
+@inject IPostsService PostsService
+@inject UserSession Session
+
+<Modal Show="Show" Title="Create a new post" OnClose="Close">
+    <form @onsubmit="HandleCreate">
+        <div class="field">
+            <label for="post-title">Title</label>
+            <input id="post-title" @bind="title" placeholder="What's on your mind?" required />
+        </div>
+
+        <div class="field">
+            <label for="post-body">Body</label>
+            <textarea id="post-body" @bind="body" rows="6" placeholder="Write your post..." required></textarea>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="error">@errorMessage</p>
+        }
+
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" @onclick="Close">Cancel</button>
+            <button type="submit" class="btn-primary-custom" disabled="@isSaving">
+                @(isSaving ? "Posting..." : "Post")
+            </button>
+        </div>
+    </form>
+</Modal>
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<PostDto> OnCreated { get; set; }
+
+    private string title = "";
+    private string body = "";
+    private string? errorMessage;
+    private bool isSaving;
+
+    private async Task HandleCreate()
+    {
+        errorMessage = null;
+        if (Session.CurrentUser == null)
+        {
+            errorMessage = "You must be logged in to post.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var created = await PostsService.AddPostAsync(new CreatePostDto
+            {
+                Title = title,
+                Body = body,
+                UserId = Session.CurrentUser.Id,
+                ForumId = null
+            });
+
+            title = "";
+            body = "";
+            await OnCreated.InvokeAsync(created);
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        errorMessage = null;
+        await OnClose.InvokeAsync();
+    }
+}

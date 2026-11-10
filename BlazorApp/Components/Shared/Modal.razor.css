@@ -1,0 +1,120 @@
+.modal-backdrop-custom {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: white;
+    color: #2a2340;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    animation: pop 0.2s ease-out;
+}
+
+.modal-box.large {
+    max-width: 720px;
+}
+
+.modal-header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e3dff0;
+}
+
+.modal-header-custom h4 {
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #6b6585;
+    cursor: pointer;
+}
+
+.modal-content-custom {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;          /* scroll si hay muchos comentarios */
+}
+
+/* Estilos compartidos para el contenido */
+.modal-content-custom ::deep .field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.modal-content-custom ::deep .field label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    color: #6b6585;
+}
+
+.modal-content-custom ::deep input,
+.modal-content-custom ::deep textarea {
+    padding: 0.6rem;
+    border: 1px solid #e3dff0;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.modal-content-custom ::deep input:focus,
+.modal-content-custom ::deep textarea:focus {
+    outline: none;
+    border-color: #3a0647;
+    box-shadow: 0 0 0 3px rgba(58, 6, 71, 0.15);
+}
+
+.modal-content-custom ::deep .error {
+    color: #c0392b;
+    font-size: 0.9rem;
+}
+
+.modal-content-custom ::deep .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.modal-content-custom ::deep .btn-cancel {
+    background: none;
+    border: 1px solid #e3dff0;
+    color: #2a2340;
+    padding: 0.5rem 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-content-custom ::deep .btn-primary-custom {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.3rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-content-custom ::deep .btn-primary-custom:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@keyframes pop {
+    from { transform: scale(0.95); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
