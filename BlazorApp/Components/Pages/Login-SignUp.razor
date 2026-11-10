@@ -1,48 +1,58 @@
 @page "/"
 @page "/login"
+@using BlazorApp.Components.Auth
 @layout LoginLayout
 @rendermode InteractiveServer
 @inject NavigationManager Navigation
 @inject IUserService UserService
 @inject UserSession Session
-@using BlazorApp.Services
-@using DTOs.User
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager navMgr
 
 <PageTitle>Forum Assignment</PageTitle>
 
-<div class="login-card">
-    <h3>@modalText</h3>
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="login-card">
+            <h3>@modalText</h3>
 
-    <form @onsubmit="HandleSubmit">
-        <div class="field">
-            <label for="username">Username</label>
-            <input id="username" type="text" @bind="username" placeholder="Enter your username" required />
+            <form @onsubmit="HandleSubmit">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input id="username" type="text" @bind="username" placeholder="Enter your username" required />
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" type="password" @bind="password" placeholder="Enter your password" required />
+                </div>
+                
+                @if (!isLogin)
+                {
+                    <div class="field">
+                        <label for="repeat-password">Repeat password</label>
+                        <input id="repeat-password" type="password" @bind="repeatPassword" placeholder="Repeat your password" required="@(!isLogin)" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="error">@errorMessage</p>
+                }
+
+                <div class="submit-buttons">
+                    <button type="submit">@modalText</button>
+                    <a onclick="@HandleSwitchLogin">@newAccountMessage</a>
+                </div>
+            </form>
         </div>
-
-        <div class="field">
-            <label for="password">Password</label>
-            <input id="password" type="password" @bind="password" placeholder="Enter your password" required />
+    </NotAuthorized>
+    <Authorized>
+        <div class="login-card">
+            <h3>Hello, @context.User.Identity?.Name</h3>
         </div>
-        
-        @if (!isLogin)
-        {
-            <div class="field">
-                <label for="repeat-password">Repeat password</label>
-                <input id="repeat-password" type="password" @bind="repeatPassword" placeholder="Repeat your password" required="@(!isLogin)" />
-            </div>
-        }
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <p class="error">@errorMessage</p>
-        }
-
-        <div class="submit-buttons">
-            <button type="submit">@modalText</button>
-            <a onclick="@HandleSwitchLogin">@newAccountMessage</a>
-        </div>
-    </form>
-</div>
+    </Authorized>
+</AuthorizeView>
 @if (showSuccessModal)
 {
     <div class="modal-backdrop-custom" @onclick="CloseModal">
@@ -85,17 +95,8 @@
         {
             if (isLogin)
             {
-                users = await UserService.GetUsersAsync();
-                var user = users.FirstOrDefault(x => x.UserName == username && x.Password == password);
-                if (user == null)
-                {
-                    errorMessage = "Username or password is incorrect";
-                }
-                else
-                {
-                    Session.Login(user);
-                    Navigation.NavigateTo("/home");
-                }
+                await ((SimpleAuthProvider)AuthProvider).Login(username, password);
+                navMgr.NavigateTo("/home");
             }
             else
             {
@@ -129,5 +130,20 @@
     {
         showSuccessModal = false;
         HandleSwitchLogin();
+    }
+    
+    private async Task LoginAsync()
+    {
+        errorMessage = "";
+        try
+        {
+            await ((SimpleAuthProvider)AuthProvider).Login(username, password);
+            navMgr.NavigateTo("/home");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errorMessage = $"Error: {e.Message}";
+        }
     }
 }

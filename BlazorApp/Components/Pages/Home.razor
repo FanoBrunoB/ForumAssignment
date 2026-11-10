@@ -1,48 +1,63 @@
 @page "/home"
+@attribute [Authorize]
+
 @rendermode InteractiveServer
 @inject IPostsService PostsService
 @inject IUserService UserService
 @inject UserSession Session
 @implements IDisposable
+@inject NavigationManager NavMgr
 
 <PageTitle>Forum Assignment</PageTitle>
 
-<div class="layout">
-    <div class="feed">
-        <h2 class="feed-title">Latest posts</h2>
+<AuthorizeView>
+    <Authorized>
+        <div class="layout">
+            <div class="feed">
+                <h2 class="feed-title">Latest posts</h2>
 
-        @if (posts == null)
-        {
-            <p class="feed-empty">Loading...</p>
-        }
-        else if (posts.Length == 0)
-        {
-            <p class="feed-empty">No posts yet.</p>
-        }
-        else
-        {
-            @foreach (var post in posts)
-            {
-                var userName = GetUserName(post.UserId);
+                @if (posts == null)
+                {
+                    <p class="feed-empty">Loading...</p>
+                }
+                else if (posts.Length == 0)
+                {
+                    <p class="feed-empty">No posts yet.</p>
+                }
+                else
+                {
+                    @foreach (var post in posts)
+                    {
+                        var userName = GetUserName(post.UserId);
 
-                <div class="post-card" @onclick="() => selectedPost = post">
-                    <div class="post-avatar">@userName.Substring(0, 1).ToUpper()</div>
-                    <div class="post-info">
-                        <span class="post-user">@userName @(userName == Session.CurrentUser?.UserName ? "(you)" : "")</span>
-                        <h3 class="post-title">@post.Title</h3>
-                    </div>
-                </div>
-            }
-            <CreatePostModal Show="Session.ShowNewPostModal"
-                             OnClose="Session.CloseNewPostModal"
-                             OnCreated="LoadPosts" />
-            
-            <PostDetailModal Post="selectedPost"
-                             GetUserName="GetUserName"
-                             OnClose="() => selectedPost = null" />
-        }
-    </div>
-</div>
+                        <div class="post-card" @onclick="() => selectedPost = post">
+                            <div class="post-avatar">@userName.Substring(0, 1).ToUpper()</div>
+                            <div class="post-info">
+                                <span class="post-user">@userName @(userName == context.User.Identity?.Name ? "(you)" : "")</span>
+                                <h3 class="post-title">@post.Title</h3>
+                            </div>
+                        </div>
+                    }
+                    <CreatePostModal Show="Session.ShowNewPostModal"
+                                     OnClose="Session.CloseNewPostModal"
+                                     OnCreated="LoadPosts" />
+
+                    <PostDetailModal Post="selectedPost"
+                                     GetUserName="GetUserName"
+                                     OnClose="() => selectedPost = null" />
+                }
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="layout">
+            <div class="feed">
+                <p class="feed-empty">You are not logged in.</p>
+                <button class="new-post-btn" @onclick='() => NavMgr.NavigateTo("/login")'>Go to login</button>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private PostDto[]? posts;

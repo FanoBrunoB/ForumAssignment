@@ -140,6 +140,5 @@ public class UsersController : ControllerBase
         Id = user.Id,
         UserName = user.Username,
         // we need to create a login endpoint because this is not correct
-        Password = user.Password
     };
 }

@@ -1,5 +1,5 @@
+@using System.Security.Claims
 @inject IPostsService PostsService
-@inject UserSession Session
 
 <Modal Show="Show" Title="Create a new post" OnClose="Close">
     <form @onsubmit="HandleCreate">
@@ -40,7 +40,7 @@
     private async Task HandleCreate()
     {
         errorMessage = null;
-        if (Session.CurrentUser == null)
+        if (userId == null)
         {
             errorMessage = "You must be logged in to post.";
             return;
@@ -53,7 +53,7 @@
             {
                 Title = title,
                 Body = body,
-                UserId = Session.CurrentUser.Id,
+                UserId = userId.Value,
                 ForumId = null
             });
 
@@ -76,5 +76,21 @@
     {
         errorMessage = null;
         await OnClose.InvokeAsync();
+    }
+    
+    [CascadingParameter] public Task<AuthenticationState> State { get; set; } = null!;
+
+    private int? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authState = await State;                 
+        ClaimsPrincipal user = authState.User;                 
+
+        if (user.Identity is null || !user.Identity.IsAuthenticated)  
+            return;
+        
+        string idAsString = user.FindFirst(ClaimTypes.NameIdentifier)!.Value; 
+        userId = int.Parse(idAsString);                 
     }
 }

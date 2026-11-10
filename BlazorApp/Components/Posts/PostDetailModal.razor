@@ -1,5 +1,5 @@
+@using System.Security.Claims
 @using DTOs
-@inject UserSession Session
 @inject ICommentsService CommentsService
 
 <Modal Show="Post != null" Title="@(Post?.Title ?? "")" Size="large" OnClose="OnClose">
@@ -76,14 +76,14 @@
     private async Task AddComment()
     {
         errorMessage = null;
-        if (Session.CurrentUser == null || Post == null) return;
+        if (userId == null || Post == null) return;
 
         try
         {
             await CommentsService.AddCommentAsync(new CreateCommentDto
             {
                 PostId = Post.Id,
-                UserId = Session.CurrentUser.Id,
+                UserId = userId.Value,
                 Body = newComment
             });
         
@@ -94,5 +94,21 @@
         {
             errorMessage = ex.Message;
         }
+    }
+    
+    [CascadingParameter] public Task<AuthenticationState> State { get; set; } = null!;
+
+    private int? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authState = await State;                 
+        ClaimsPrincipal user = authState.User;                 
+
+        if (user.Identity is null || !user.Identity.IsAuthenticated)  
+            return;
+        
+        string idAsString = user.FindFirst(ClaimTypes.NameIdentifier)!.Value; 
+        userId = int.Parse(idAsString);                 
     }
 }
