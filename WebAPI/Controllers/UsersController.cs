@@ -138,6 +138,8 @@ public class UsersController : ControllerBase
     private static UserDto ToDto(User user) => new()
     {
         Id = user.Id,
-        UserName = user.Username
+        UserName = user.Username,
+        // we need to create a login endpoint because this is not correct
+        Password = user.Password
     };
 }

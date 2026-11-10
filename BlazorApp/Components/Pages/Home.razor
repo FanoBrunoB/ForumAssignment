@@ -1,0 +1,78 @@
+@page "/home"
+@rendermode InteractiveServer
+@inject IPostsService PostsService
+@inject IUserService UserService
+@inject UserSession Session
+@implements IDisposable
+
+<PageTitle>Forum Assignment</PageTitle>
+
+<div class="layout">
+    <div class="feed">
+        <h2 class="feed-title">Latest posts</h2>
+
+        @if (posts == null)
+        {
+            <p class="feed-empty">Loading...</p>
+        }
+        else if (posts.Length == 0)
+        {
+            <p class="feed-empty">No posts yet.</p>
+        }
+        else
+        {
+            @foreach (var post in posts)
+            {
+                var userName = GetUserName(post.UserId);
+
+                <div class="post-card" @onclick="() => selectedPost = post">
+                    <div class="post-avatar">@userName.Substring(0, 1).ToUpper()</div>
+                    <div class="post-info">
+                        <span class="post-user">@userName @(userName == Session.CurrentUser?.UserName ? "(you)" : "")</span>
+                        <h3 class="post-title">@post.Title</h3>
+                    </div>
+                </div>
+            }
+            <CreatePostModal Show="Session.ShowNewPostModal"
+                             OnClose="Session.CloseNewPostModal"
+                             OnCreated="LoadPosts" />
+            
+            <PostDetailModal Post="selectedPost"
+                             GetUserName="GetUserName"
+                             OnClose="() => selectedPost = null" />
+        }
+    </div>
+</div>
+
+@code {
+    private PostDto[]? posts;
+    private Dictionary<int, string> userNames = new();
+    private PostDto? selectedPost;
+    private bool showCreatePost;
+    protected override async Task OnInitializedAsync()
+    {
+        Session.OnChange += HandleSessionChanged;
+
+        var users = await UserService.GetUsersAsync();
+        userNames = users.ToDictionary(u => u.Id, u => u.UserName);
+
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        posts = await PostsService.GetPostsAsync();
+    }
+
+    private void HandleSessionChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Session.OnChange -= HandleSessionChanged;
+    }
+
+    private string GetUserName(int userId) =>
+        userNames.TryGetValue(userId, out var name) ? name : "Unknown";
+    
+    
+}

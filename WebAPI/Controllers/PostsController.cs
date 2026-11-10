@@ -29,7 +29,8 @@ public class PostsController : ControllerBase
         try
         {
             User user = await userRepo.GetSingleAsync(request.UserId);
-            await forumRepo.GetSingleAsync(request.ForumId); 
+            if (request.ForumId is not null)
+                await forumRepo.GetSingleAsync(request.ForumId.Value);
             Post post = new(request.UserId, request.Title, request.Body)
             {
                 ForumId = request.ForumId

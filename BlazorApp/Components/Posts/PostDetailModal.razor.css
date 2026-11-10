@@ -1,0 +1,43 @@
+.post-author {
+    font-size: 0.85rem;
+    color: #6b6585;
+    margin-bottom: 0.75rem;
+}
+
+.post-body {
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.muted {
+    color: #6b6585;
+}
+
+.comments {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.comment {
+    background: #f4f6fb;
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+}
+
+.comment-user {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3a0647;
+}
+
+.comment p {
+    margin: 0.2rem 0 0;
+}
+
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
