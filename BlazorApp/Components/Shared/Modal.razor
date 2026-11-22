@@ -1,0 +1,25 @@
+@if (Show)
+{
+    <div class="modal-backdrop-custom" @onclick="Close">
+        <div class="modal-box @Size" @onclick:stopPropagation="true">
+            <div class="modal-header-custom">
+                <h4>@Title</h4>
+                <button type="button" class="modal-close" @onclick="Close" aria-label="Close">✕</button>
+            </div>
+
+            <div class="modal-content-custom">
+                @ChildContent
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Size { get; set; } = "";   // "" normal, "large" más ancho
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

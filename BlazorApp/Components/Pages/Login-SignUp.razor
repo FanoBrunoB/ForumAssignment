@@ -1,0 +1,149 @@
+@page "/"
+@page "/login"
+@using BlazorApp.Components.Auth
+@layout LoginLayout
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject IUserService UserService
+@inject UserSession Session
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager navMgr
+
+<PageTitle>Forum Assignment</PageTitle>
+
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="login-card">
+            <h3>@modalText</h3>
+
+            <form @onsubmit="HandleSubmit">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input id="username" type="text" @bind="username" placeholder="Enter your username" required />
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" type="password" @bind="password" placeholder="Enter your password" required />
+                </div>
+                
+                @if (!isLogin)
+                {
+                    <div class="field">
+                        <label for="repeat-password">Repeat password</label>
+                        <input id="repeat-password" type="password" @bind="repeatPassword" placeholder="Repeat your password" required="@(!isLogin)" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="error">@errorMessage</p>
+                }
+
+                <div class="submit-buttons">
+                    <button type="submit">@modalText</button>
+                    <a onclick="@HandleSwitchLogin">@newAccountMessage</a>
+                </div>
+            </form>
+        </div>
+    </NotAuthorized>
+    <Authorized>
+        <div class="login-card">
+            <h3>Hello, @context.User.Identity?.Name</h3>
+        </div>
+    </Authorized>
+</AuthorizeView>
+@if (showSuccessModal)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <h4>✅ Account created</h4>
+            <p>Your account has been created successfully. You can now log in.</p>
+            <button type="button" @onclick="CloseModal">OK</button>
+        </div>
+    </div>
+}
+
+@code {
+    private string username = "";
+    private string password = "";
+    private string repeatPassword = "";
+    private string modalText = "Sing in";
+    private string newAccountMessage = "New to Forum Assignment? Create an account here.";
+    private Boolean isLogin = true;
+    private Boolean showSuccessModal = false;
+    private string? errorMessage;
+    private UserDto[]? users;
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+
+        if (username == "" || password == "" || (!isLogin && repeatPassword == ""))
+        {
+            errorMessage = "Please fill in all fields";
+            return;
+        }
+
+        if (!isLogin && password != repeatPassword)
+        {
+            errorMessage = "Passwords do not match";
+            return;
+        }
+
+        try
+        {
+            if (isLogin)
+            {
+                await ((SimpleAuthProvider)AuthProvider).Login(username, password);
+                navMgr.NavigateTo("/home");
+            }
+            else
+            {
+                await UserService.AddUserAsync(new CreateUserDto
+                {
+                    UserName = username,
+                    Password = password
+                });
+                
+                showSuccessModal = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void HandleSwitchLogin()
+    {
+        errorMessage = null;
+        username = "";
+        password = "";
+        repeatPassword = "";
+        newAccountMessage = isLogin ? "Already have an account? Log in here." : "New to Forum Assignment? Create an account here.";
+        modalText = isLogin ? "Sing up" : "Log in";
+        isLogin = !isLogin;
+    }
+    
+    private void CloseModal()
+    {
+        showSuccessModal = false;
+        HandleSwitchLogin();
+    }
+    
+    private async Task LoginAsync()
+    {
+        errorMessage = "";
+        try
+        {
+            await ((SimpleAuthProvider)AuthProvider).Login(username, password);
+            navMgr.NavigateTo("/home");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            errorMessage = $"Error: {e.Message}";
+        }
+    }
+}
