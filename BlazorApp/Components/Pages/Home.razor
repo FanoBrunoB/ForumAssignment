@@ -1,8 +1,8 @@
 @page "/home"
-@attribute [Authorize]
 
-@rendermode InteractiveServer
+@using DTOs.Forum
 @inject IPostsService PostsService
+@inject IForumsService ForumsService
 @inject IUserService UserService
 @inject UserSession Session
 @implements IDisposable
@@ -11,9 +11,23 @@
 <PageTitle>Forum Assignment</PageTitle>
 
 <AuthorizeView>
+    <Authorizing>
+        <p>
+            Checking login...
+        </p>
+    </Authorizing>
     <Authorized>
         <div class="layout">
             <div class="feed">
+                <div class="new-forum">
+                    <input placeholder="New forum title" @bind="newForumTitle"/>
+                    <button class="new-post-btn" @onclick="() => CreateForum(context.User.Identity?.Name)">Create forum</button>
+                    @if (forumError != null)
+                    {
+                        <p class="feed-empty">@forumError</p>
+                    }
+                </div>
+
                 <h2 class="feed-title">Latest posts</h2>
 
                 @if (posts == null)
@@ -38,14 +52,15 @@
                             </div>
                         </div>
                     }
-                    <CreatePostModal Show="Session.ShowNewPostModal"
-                                     OnClose="Session.CloseNewPostModal"
-                                     OnCreated="LoadPosts" />
-
-                    <PostDetailModal Post="selectedPost"
-                                     GetUserName="GetUserName"
-                                     OnClose="() => selectedPost = null" />
                 }
+
+                <CreatePostModal Show="Session.ShowNewPostModal"
+                                 OnClose="Session.CloseNewPostModal"
+                                 OnCreated="LoadPosts"/>
+
+                <PostDetailModal Post="selectedPost"
+                                 GetUserName="GetUserName"
+                                 OnClose="() => selectedPost = null"/>
             </div>
         </div>
     </Authorized>
@@ -61,9 +76,12 @@
 
 @code {
     private PostDto[]? posts;
+    private ForumDto[] forums = [];
     private Dictionary<int, string> userNames = new();
     private PostDto? selectedPost;
-    private bool showCreatePost;
+    private string newForumTitle = "";
+    private string? forumError;
+
     protected override async Task OnInitializedAsync()
     {
         Session.OnChange += HandleSessionChanged;
@@ -72,11 +90,46 @@
         userNames = users.ToDictionary(u => u.Id, u => u.UserName);
 
         await LoadPosts();
+        await LoadForums();
     }
 
     private async Task LoadPosts()
     {
         posts = await PostsService.GetPostsAsync();
+    }
+
+    private async Task LoadForums()
+    {
+        forums = await ForumsService.GetForumsAsync();
+    }
+
+    private async Task CreateForum(string? currentUserName)
+    {
+        forumError = null;
+
+        if (string.IsNullOrWhiteSpace(newForumTitle))
+        {
+            forumError = "Title is required.";
+            return;
+        }
+
+        int userId = userNames.FirstOrDefault(kv => kv.Value == currentUserName).Key;
+        if (userId == 0)
+        {
+            forumError = "Could not find the logged-in user.";
+            return;
+        }
+
+        try
+        {
+            await ForumsService.AddForumAsync(new CreateForumDto { UserId = userId, Title = newForumTitle });
+            newForumTitle = "";
+            await LoadForums();
+        }
+        catch (Exception e)
+        {
+            forumError = e.Message;
+        }
     }
 
     private void HandleSessionChanged() => InvokeAsync(StateHasChanged);
@@ -88,6 +141,4 @@
 
     private string GetUserName(int userId) =>
         userNames.TryGetValue(userId, out var name) ? name : "Unknown";
-    
-    
 }

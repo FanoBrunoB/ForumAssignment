@@ -3,20 +3,19 @@ using System.Text.Json;
 using DTOs.Auth;
 using DTOs.User;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.JSInterop;
 
 namespace BlazorApp.Components.Auth;
-
-
 
 public class SimpleAuthProvider : AuthenticationStateProvider
 {
     private readonly HttpClient httpClient;
-    private ClaimsPrincipal currentClaimsPrincipal;
+    private readonly IJSRuntime jsRuntime;
 
-    public SimpleAuthProvider(HttpClient httpClient)
+    public SimpleAuthProvider(HttpClient httpClient, IJSRuntime jsRuntime)
     {
         this.httpClient = httpClient;
+        this.jsRuntime = jsRuntime;
     }
 
     public async Task Login(string userName, string password)
@@ -40,28 +39,49 @@ public class SimpleAuthProvider : AuthenticationStateProvider
             PropertyNameCaseInsensitive = true
         })!;
 
+        string serialisedData = JsonSerializer.Serialize(userDto);
+        await jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentUser", serialisedData);
 
-        List<Claim> claims = new List<Claim>()
-        {
-            new Claim(ClaimTypes.Name, userDto.UserName),
-            new Claim(ClaimTypes.NameIdentifier, userDto.Id.ToString())
-        };
-        ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth");
-        currentClaimsPrincipal = new ClaimsPrincipal(identity);
-
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(new AuthenticationState(currentClaimsPrincipal))
-        );
+        ClaimsPrincipal principal = CreatePrincipal(userDto);
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(principal)));
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        return new AuthenticationState(currentClaimsPrincipal ?? new());
+        string? userAsJson;
+        try
+        {
+            userAsJson = await jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", "currentUser");
+        }
+        catch (InvalidOperationException)
+        {
+            // JS not available yet (e.g. during prerendering)
+            return new AuthenticationState(new ClaimsPrincipal());
+        }
+
+        if (string.IsNullOrEmpty(userAsJson))
+        {
+            return new AuthenticationState(new ClaimsPrincipal());
+        }
+
+        UserDto userDto = JsonSerializer.Deserialize<UserDto>(userAsJson)!;
+        return new AuthenticationState(CreatePrincipal(userDto));
     }
 
-    public void Logout()
+    public async Task Logout()
     {
-        currentClaimsPrincipal = new();
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(currentClaimsPrincipal)));
+        await jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "currentUser", "");
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(new ClaimsPrincipal())));
+    }
+
+    private static ClaimsPrincipal CreatePrincipal(UserDto userDto)
+    {
+        List<Claim> claims =
+        [
+            new Claim(ClaimTypes.Name, userDto.UserName),
+            new Claim(ClaimTypes.NameIdentifier, userDto.Id.ToString())
+        ];
+        ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth");
+        return new ClaimsPrincipal(identity);
     }
 }

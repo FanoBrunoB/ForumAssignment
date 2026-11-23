@@ -29,12 +29,11 @@ public class PostsController : ControllerBase
         try
         {
             User user = await userRepo.GetSingleAsync(request.UserId);
-            if (request.ForumId is not null)
-                await forumRepo.GetSingleAsync(request.ForumId.Value);
-            Post post = new(request.UserId, request.Title, request.Body)
-            {
-                ForumId = request.ForumId
-            };
+            if (request.ForumId is null)
+                return BadRequest("ForumId is required.");
+
+            await forumRepo.GetSingleAsync(request.ForumId.Value);
+            Post post = new(request.UserId, request.Title, request.Body, request.ForumId.Value);
             Post created = await postRepo.AddAsync(post);
 
             PostDto dto = ToDto(created, user.Username);

@@ -1,8 +1,21 @@
 @using System.Security.Claims
+@using DTOs.Forum
 @inject IPostsService PostsService
+@inject IForumsService ForumsService
 
 <Modal Show="Show" Title="Create a new post" OnClose="Close">
     <form @onsubmit="HandleCreate">
+        <div class="field">
+            <label for="post-forum">Forum</label>
+            <select id="post-forum" @bind="forumId">
+                <option value="0">Choose a forum</option>
+                @foreach (var f in forums)
+                {
+                    <option value="@f.Id">@f.Title</option>
+                }
+            </select>
+        </div>
+
         <div class="field">
             <label for="post-title">Title</label>
             <input id="post-title" @bind="title" placeholder="What's on your mind?" required />
@@ -32,10 +45,44 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<PostDto> OnCreated { get; set; }
 
+    [CascadingParameter] public Task<AuthenticationState> State { get; set; } = null!;
+
+    private int? userId;
+    private ForumDto[] forums = [];
+    private bool wasShown;
+    private int forumId;
     private string title = "";
     private string body = "";
     private string? errorMessage;
     private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authState = await State;
+        ClaimsPrincipal user = authState.User;
+
+        if (user.Identity is null || !user.Identity.IsAuthenticated)
+            return;
+
+        string idAsString = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+        userId = int.Parse(idAsString);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Show && !wasShown)
+        {
+            try
+            {
+                forums = await ForumsService.GetForumsAsync();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
+        }
+        wasShown = Show;
+    }
 
     private async Task HandleCreate()
     {
@@ -43,6 +90,11 @@
         if (userId == null)
         {
             errorMessage = "You must be logged in to post.";
+            return;
+        }
+        if (forumId == 0)
+        {
+            errorMessage = "Please choose a forum.";
             return;
         }
 
@@ -54,11 +106,12 @@
                 Title = title,
                 Body = body,
                 UserId = userId.Value,
-                ForumId = null
+                ForumId = forumId
             });
 
             title = "";
             body = "";
+            forumId = 0;
             await OnCreated.InvokeAsync(created);
             await Close();
         }
@@ -76,21 +129,5 @@
     {
         errorMessage = null;
         await OnClose.InvokeAsync();
-    }
-    
-    [CascadingParameter] public Task<AuthenticationState> State { get; set; } = null!;
-
-    private int? userId;
-
-    protected override async Task OnInitializedAsync()
-    {
-        AuthenticationState authState = await State;                 
-        ClaimsPrincipal user = authState.User;                 
-
-        if (user.Identity is null || !user.Identity.IsAuthenticated)  
-            return;
-        
-        string idAsString = user.FindFirst(ClaimTypes.NameIdentifier)!.Value; 
-        userId = int.Parse(idAsString);                 
     }
 }

@@ -1,4 +1,6 @@
+using EfcRepositories;
 using FileRepositories;
+using Microsoft.EntityFrameworkCore;
 using RepositoryContracts;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,12 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<IPostRepository, PostFileRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentFileRepository>();
-builder.Services.AddScoped<IForumRepository, ForumFileRepository>();
-builder.Services.AddScoped<IUserRepository, UserFileRepository>();
-builder.Services.AddScoped<IReactionRepository, ReactionInMemoryRepository>();
+builder.Services.AddScoped<IPostRepository, EfcPostRepository>();
+builder.Services.AddScoped<ICommentRepository, EfcCommentRepository>();
+builder.Services.AddScoped<IForumRepository, EfcForumRepository>();
+builder.Services.AddScoped<IUserRepository, EfcUserRepository>();
+builder.Services.AddScoped<IReactionRepository, EfcReactionRepository>();
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("ForumDb")));
 
 var app = builder.Build();
 

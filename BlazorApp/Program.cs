@@ -16,7 +16,9 @@ builder.Services.AddScoped<IUserService, HttpUserService>();
 builder.Services.AddScoped<IPostsService, HttpPostsService>();
 builder.Services.AddScoped<ICommentsService, HttpCommentsService>();
 builder.Services.AddScoped<AuthenticationStateProvider, SimpleAuthProvider>();
+builder.Services.AddScoped<IForumsService, HttpForumsService>();
 builder.Services.AddScoped<UserSession>();
+
 
 var app = builder.Build();
 

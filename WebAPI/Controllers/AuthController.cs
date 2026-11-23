@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
             }
             else
             {
-                return Unauthorized();
+                return Unauthorized("Invalid username or password");
             }
             
         }
